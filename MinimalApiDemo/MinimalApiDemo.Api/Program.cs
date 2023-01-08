@@ -5,7 +5,9 @@ using MinimalApiDemo.Api;
 using MinimalApiDemo.Api.Todo;
 
 var builder = WebApplication.CreateBuilder(args);
+
 builder.Services.AddTransient<ITodoService, TodoService>();
+builder.Services.AddSingleton<IEmailProvider, SendGridEmailProvider>();
 
 builder.Services.AddDbContext<TodoDbContext>(options =>
 {
@@ -31,7 +33,7 @@ app.MapGet("/todo/{id}", async (int id, ITodoService todoService) =>
 
 app.MapGet("/todo/", (ITodoService todoService) => todoService.GetItemsAsync());
 
-app.MapPost("/todo/", async (TodoItem item, ITodoService todoService) =>
+app.MapPost("/todo/", async (TodoItem item, ITodoService todoService, IEmailProvider emailProvider) =>
 {
     if (item is null)
     {
@@ -42,6 +44,8 @@ app.MapPost("/todo/", async (TodoItem item, ITodoService todoService) =>
         return Results.BadRequest("Title is null");
     }
     var result = await todoService.AddItemAsync(item.Title!);
+    await emailProvider.SendAsync("admin@mdbouk.com", $"Todo item {result.Title} with Id {result.Id} added successfully");
+
     return Results.Created($"/todo/{result.Id}", result);
 });
 

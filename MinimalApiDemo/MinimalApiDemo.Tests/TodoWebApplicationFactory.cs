@@ -14,6 +14,14 @@ public class TodoWebApplicationFactory<TProgram> : WebApplicationFactory<TProgra
     {
         builder.ConfigureServices(services =>
         {
+            // Fake Email Provider
+            var emailDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(IEmailProvider));
+
+            services.Remove(emailDescriptor!);
+
+            services.AddSingleton<IEmailProvider, FakeEmailProvider>();
+
+            // Test DB Context
             var dbContextDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<TodoDbContext>));
 
             services.Remove(dbContextDescriptor!);
@@ -24,6 +32,8 @@ public class TodoWebApplicationFactory<TProgram> : WebApplicationFactory<TProgra
                 options.UseSqlite($"Data Source={Path.Join(path, "MinimalApiDemoTests.db")}");
             });
         });
+
+        builder.UseEnvironment("development");
     }
 }
 
